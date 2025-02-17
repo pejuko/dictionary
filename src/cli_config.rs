@@ -13,6 +13,7 @@ pub struct CliConfig {
     pub title: String,
     pub author: String,
     pub force: bool,
+    pub print_help: bool,
 
 }
 
@@ -30,6 +31,7 @@ impl CliConfig {
             target_language: "cs".to_string(),
             title: "".to_string(),
             author: "".to_string(),
+            print_help: false,
         }
     }
 
@@ -38,8 +40,11 @@ impl CliConfig {
         args.next();
 
         let mut config = Self::new();
-        
+        let mut has_params = false;
+
         while let Some(arg) = args.next() {
+            has_params = true;
+
             match arg.as_str() {
                 "-i" => config.input_file_path = Some(Self::get_file_name(args.next())?),
                 "-o" => config.output_path = Some(Self::get_param_value(args.next())?),
@@ -52,8 +57,13 @@ impl CliConfig {
                 "-tl" => config.target_language = Self::get_param_value(args.next())?,
                 "-t" => config.title = Self::get_param_value(args.next())?,
                 "-a" => config.author = Self::get_param_value(args.next())?,
+                "-h" => config.print_help = true,
                 _ => return Err("Illegal argument"),
             }
+        }
+
+        if !has_params {
+            config.print_help = true;
         }
 
         Ok(config)
@@ -84,5 +94,52 @@ impl CliConfig {
         let file_name = CliConfig::get_file_name(Some(name_and_file_name.get(1).unwrap().to_string()))?;
 
         Ok((name, file_name))
+    }
+
+    pub fn print_help() {
+        println!(
+r#"
+All input files must be encoded in UTF-8.
+
+Dictionary parameters:
+
+    -i      Path to tab delimited input file where first column is in source language
+            and second column is in target language.
+
+    -w      Path to wiktionary file in xml.bz2 format. Requires -wp parameter.
+
+    -wp     Wiki prefix e.g. Czech or German or ...
+
+    -p      Pronunciation file with a name. e.g. US:data/en_US.txt where US is name
+            and data/en_US.txt tab delimited file where first column is a word in
+            source language and in second column is pronunciation. You can use this
+            parametr multiple times.
+
+    -o      Output directory
+
+    -s      Search given word in builded dictionary.
+
+    -f      Force output if the output directory exists and overwrite the files.
+
+    -sl     Source language. Default en.
+
+    -tl     Target language. Default cs.
+
+    -t      Dictionary title.
+
+    -a      Author.
+
+    -h      This help.
+
+Examples:
+
+    It is recommended to build the app in release mode. Processing
+    wiktionary data may be very slow.
+
+    To generate English-Czech dictionary run:
+
+    cargo run --release -- -w data/enwiktionary.xml.bz2 -wp Czech -o data/kindle-en-cs -t "English-Czech dictionary" -a pejuko
+"#
+        )
     }
 }

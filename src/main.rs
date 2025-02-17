@@ -13,6 +13,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         process::exit(1);
     });
 
+    if config.print_help {
+        CliConfig::print_help();
+        process::exit(0);
+    }
+
     println!("{:#?}", &config);
 
     if config.query == None && config.output_path == None {
