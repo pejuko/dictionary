@@ -32,14 +32,17 @@ struct Re {
     data: Regex,
     translations_title: Regex,
     language: Regex,
+    prefix: Regex,
 }
 
 impl Re {
-    fn new() -> Re {
+    fn new(lang_prefix: &str) -> Re {
+        let prefix = format!("^\\*.?\\s{}:", lang_prefix);
         Re {
             data: Regex::new(r"\{\{(.*?)}}").unwrap(),
             translations_title: Regex::new(r"^([^/]+)/translations$").unwrap(),
             language: Regex::new(r"^==([^=]+)==$").unwrap(),
+            prefix: Regex::new(&prefix).unwrap(),
         }
     }
 }
@@ -56,16 +59,12 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
     let mut buf = Vec::new();
     let mut page = Page::empty();
     let mut state = State::None;
-    let re = Re::new();
+    let re = Re::new(prefix);
 
-    // The `Reader` does not implement `Iterator` because it outputs borrowed data (`Cow`s)
     loop {
-        // NOTE: this is the generic case when we don't know about the input BufRead.
-        // when the input is a &str or a &[u8], we don't actually need to use another
-        // buffer, we could directly call `reader.read_event()`
         match reader.read_event_into(&mut buf) {
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
-            // exits the loop when reaching end of file
+
             Ok(Event::Eof) => break,
 
             Ok(Event::Start(e)) => {
@@ -94,7 +93,7 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
                     b"page" => {
                         state = State::None;
                         if !page.title.contains(":") {
-                            read_wiki_page(dict, &page, prefix, &re);
+                            read_wiki_page(dict, &page, &re);
                         }
                     },
 
@@ -135,9 +134,7 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
     Ok(())
 }
 
-fn read_wiki_page(dict: &mut Dictionary, page: &Page, prefix: &str, re: &Re) {
-    let line_prefix = format!("* {}: ", prefix);
-
+fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
     let mut headword = page.title.trim();
     if let Some(captures) = re.translations_title.captures(headword) {
         headword = captures.get(1).unwrap().as_str();
@@ -212,7 +209,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, prefix: &str, re: &Re) {
                 "en-adj" => current_word_class = WordClass::Adjective,
                 "en-prep" => current_word_class = WordClass::Preposition,
 
-                _ => if parts.len() > 2 && line.starts_with(line_prefix.as_str()) {
+                _ => if parts.len() > 2 && re.prefix.is_match(line) {
                     let translation = parts[2].trim();
                     current_meaning.add_translation(translation);
                 }

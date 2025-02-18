@@ -90,7 +90,7 @@ fn format_pronunciations(out_str: &mut String, term: &Term) {
             continue;
         }
         let pronunciations = term.pronunciations.get(name).unwrap();
-        if name.len() > 0 {
+        if name.len() > 0 && name != "wiki" {
             out_str.push_str(format!("<i>{}</i>: ", name).as_str());
         }
         out_str.push_str(escape_xml(pronunciations.join(", ").as_str()).as_str());
