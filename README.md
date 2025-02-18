@@ -1,3 +1,5 @@
+# Dictionary converter
+
 ## About
 
 This app converts various sources into dictionary format suitable for e-readers.
@@ -68,3 +70,7 @@ cargo run -- -h
 ```
 
 Or try to find inspiration in [convert-en-cs.sh](convert-en-cs.sh) file.
+
+## License
+
+Code and documentation: MIT
