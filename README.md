@@ -74,3 +74,7 @@ Or try to find inspiration in [convert-en-cs.sh](convert-en-cs.sh) file.
 ## License
 
 Code and documentation: MIT
+
+Dictionaries published here are available under the
+[Creative Commons Attribution-ShareAlike License](https://creativecommons.org/licenses/by-sa/4.0/)
+and are generated solely from wiktionary data.
