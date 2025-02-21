@@ -1,0 +1,90 @@
+---
+---
+
+$text-color: #443322;
+$anchor-text-color: #664499;
+$background-color: #ffeecc;
+
+body {
+    font-family: serif;
+    color: $text-color;
+    background-color: $background-color;
+    text-align: center;
+    margin-bottom: 55px;
+}
+
+header,main {
+    padding: 0 20px;
+    margin: 0 auto;
+}
+
+main {
+    text-align: left;
+}
+
+header {
+    text-align: center;
+}
+
+table, th, td {
+    border: 1px solid $text-color;
+}
+
+th, td {
+    padding: 10px;
+}
+
+a:link,
+a:visited,
+a:hover,
+a:active {
+    color: $anchor-text-color;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.screenshot {
+    width: 100%;
+    text-align: center;
+
+    img {
+        width: 70%;
+        margin: 10px auto;
+        border: 2px solid $text-color;
+    }
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    height: 20px;
+    width: 100%;
+    padding: 10px;
+    background: $background-color;
+}
+
+@media (min-width: 480px) {
+    header {
+        width: 95%;
+    }
+
+    main {
+        width: 95%;
+        padding: 0;
+    }
+}
+
+@media (min-width: 768px) {
+    header {
+        width: 55%;
+    }
+
+    main {
+        width: 55%;
+        padding: 0;
+    }
+}

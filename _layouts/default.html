@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>{{ page.title }}</title>
+        <link rel="stylesheet" href="{{ site.baseurl }}/assets/main.css" />
+    </head>
+
+    <body>
+        <header>
+            <nav>
+                <a href="{{ site.baseurl }}/">English</a>
+                | <a href="{{ site.baseurl }}/cs/">Čeština</a>
+            </nav>
+            <h1>{{ page.title }}</h1>
+        </header>
+
+
+        <main>
+            <section>{{ page.intro }} {{ page.license }}.</section>
+
+            <section class="screenshot">
+                <img src="{{ site.baseurl }}/assets/screenshot.png" alt="screenshot" />
+            </section>
+
+            <h2>{{ page.installation_title }}</h2>
+
+            <h3>Kindle</h3>
+            <section>{{ page.installation_kindle }}</section>
+
+            <h2>{{ page.dictionaries }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th><th>Kindle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>{{ page.dictionary_en_cs }}</th>
+                        <td><a href="https://github.com/pejuko/dictionary/releases/download/v0.1/english-czech-dictionary-pejuko-20250201.mobi">20250201</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+
+        <footer>{{ page.license }}</footer>
+    </body>
+</html>
