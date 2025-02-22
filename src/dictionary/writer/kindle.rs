@@ -64,10 +64,9 @@ fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_
 
         let mut out_str = format!(r#"
         <idx:entry name="main" scriptable="yes" spell="yes">
-          <b><idx:orth>{}</idx:orth></b>
-          <br />
-"#, super::escape_xml(&term.headword));
+"#);
 
+        format_headword(&mut out_str, &term);
         format_pronunciations(&mut out_str, &term);
         format_classes(&mut out_str, &term);
 
@@ -79,6 +78,18 @@ fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_
     end_kindle_content_file(&mut f)?;
 
     Ok(())
+}
+
+fn format_headword(out_str: &mut String, term: &Term) {
+    out_str.push_str(format!("<b><idx:orth>{}", super::escape_xml(&term.headword)).as_str());
+    if !term.inflections.is_empty() {
+        out_str.push_str("<idx:infl>");
+        for inflection in term.inflections.iter() {
+            out_str.push_str(format!("<idx:iform value=\"{}\" />", super::escape_xml(inflection)).as_str());
+        }
+        out_str.push_str("</idx:infl>");
+    }
+    out_str.push_str("</idx:orth></b><br />");
 }
 
 fn format_pronunciations(out_str: &mut String, term: &Term) {

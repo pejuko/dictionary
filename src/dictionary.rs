@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
 use reader::{gnu_fdl, pronunciation, wiki};
+use regex::Regex;
 use writer::kindle;
 
 use crate::cli_config::CliConfig;
@@ -16,11 +17,21 @@ pub struct Dictionary {
     author: String,
 
     terms: HashMap<String, Term>,
+    re: WordRegex,
+}
+
+#[derive(Debug)]
+pub struct WordRegex {
+    re_s: Regex,
+    re_o: Regex,
+    re_y: Regex,
+    re_y_with_consonant: Regex
 }
 
 #[derive(Debug)]
 pub struct Term {
     headword: String,
+    inflections: HashSet<String>,
     pronunciations: HashMap<String, PronunciationType>,
     classes: HashMap<WordClass, MeaningType>,
 }
@@ -59,7 +70,8 @@ impl Dictionary {
             target_language: target_language.to_string(),
             title: title.to_string(),
             author: author.to_string(),
-            terms: HashMap::new()
+            terms: HashMap::new(),
+            re: WordRegex::new(),
         }
     }
 
@@ -101,9 +113,46 @@ impl Dictionary {
 
     pub fn add_meaning(&mut self, headword: &str, word_class: WordClass, meaning: Meaning) {
         let entry = self.terms.entry(Self::word_to_key(headword)).or_insert(Term::new(headword));
+        let inflections = Self::inflect(headword, word_class.clone(), &self.re);
+        entry.inflections.extend(inflections);
         let class_entry = entry.classes.entry(word_class).or_insert(MeaningType::new());
         let meaning_entry = class_entry.entry(Self::word_to_key(meaning.description.as_str())).or_insert(Meaning::new(meaning.description.as_str()));
         meaning_entry.translations.extend(meaning.translations);
+    }
+
+    fn inflect(headword: &str, word_class: WordClass, re: &WordRegex) -> Vec<String> {
+        let mut inflections = vec![];
+
+        match word_class {
+            WordClass::Noun => Self::pluralize(&mut inflections, headword, re),
+            _ => (),
+        }
+
+        inflections
+    }
+
+    fn pluralize(inflections: &mut Vec<String>, headword: &str, re: &WordRegex) {
+        let mut new_word = headword.to_string();
+
+        if re.re_s.is_match(headword) {
+            new_word.push_str("es");
+        } else if re.re_o.is_match(headword) {
+            match headword {
+                "hero" | "potato" | "tomato" => new_word.push_str("es"),
+                _ => new_word.push_str("s"),
+            }
+        } else if re.re_y.is_match(headword) {
+            if let Some(captures) = re.re_y_with_consonant.captures(headword) {
+                new_word = captures.get(1).unwrap().as_str().to_string();
+                new_word.push_str("ies");
+            } else {
+                new_word.push_str("s");
+            }
+        } else {
+            new_word.push_str("s");
+        }
+
+        inflections.push(new_word);
     }
 
     pub fn lookup(&self, word: &str) -> Option<&Term> {
@@ -123,10 +172,22 @@ impl Dictionary {
     }
 }
 
+impl WordRegex {
+    pub fn new() -> WordRegex {
+        WordRegex {
+            re_s: Regex::new("(s|sh|ch|x)$").unwrap(),
+            re_o: Regex::new("o$").unwrap(),
+            re_y: Regex::new("y$").unwrap(),
+            re_y_with_consonant: Regex::new("(.*[bcdfghjklmnpqrstvwxyz])y$").unwrap()
+        }
+    }
+}
+
 impl Term {
     pub fn new(headword: &str) -> Term {
         Term {
             headword: headword.to_string(),
+            inflections: HashSet::new(),
             pronunciations: HashMap::new(),
             classes: HashMap::new(),
         }
