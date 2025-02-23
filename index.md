@@ -3,6 +3,7 @@
 # To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
 
 layout: default
+lang: en
 title: Dictionaries for e-readers
 license: All dictionaries are licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike License</a>
 intro: "Dictionaries, which you can found below, are all generated from <a href=\"https://en.wiktionary.org\">english wiktionary</a> using <a href=\"https://github.com/pejuko/dictionary\">dictionary converter</a>."
