@@ -27,6 +27,7 @@ header {
 }
 
 table, th, td {
+    border-collapse: collapse;
     border: 1px solid $text-color;
 }
 
@@ -51,7 +52,9 @@ a:hover {
     text-align: center;
 
     img {
+        max-width: 450px;
         width: 70%;
+        height: auto;
         margin: 10px auto;
         border: 2px solid $text-color;
     }
