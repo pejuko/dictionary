@@ -163,9 +163,11 @@ impl Dictionary {
         self.terms.len()
     }
 
+    /*
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+    */
 
     pub fn to_kindle(&self, output_path: &str, force: bool) -> Result<(), Box<dyn Error>> {
         kindle::to_kindle(self, output_path, force)
