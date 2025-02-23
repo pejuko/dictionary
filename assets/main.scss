@@ -10,11 +10,10 @@ body {
     color: $text-color;
     background-color: $background-color;
     text-align: center;
-    margin-bottom: 55px;
 }
 
 header,main {
-    padding: 0 20px;
+    padding: 10px 20px;
     margin: 0 auto;
 }
 
@@ -61,10 +60,8 @@ a:hover {
 }
 
 footer {
-    position: fixed;
     bottom: 0;
     right: 0;
-    height: 20px;
     width: 100%;
     padding: 10px;
     background: $background-color;
