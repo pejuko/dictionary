@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("{:#?}", &config);
 
-    if config.query == None && config.output_path == None {
+    if config.query.is_none() && config.output_path.is_none() {
         Err("No search (-s) or output path (-o) is specified.")?;
     }
 

@@ -8,7 +8,7 @@ use crate::dictionary::{Dictionary, Meaning, Term};
 use super::escape_xml;
 
 pub fn to_kindle(dict: &Dictionary, output_path: &str, force: bool) -> Result<(), Box<dyn Error>> {
-    let output = fs::metadata(&output_path);
+    let output = fs::metadata(output_path);
     match output {
         Ok(metadata) => {
             if metadata.is_file() {
@@ -62,13 +62,13 @@ fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_
             continue;
         }
 
-        let mut out_str = format!(r#"
+        let mut out_str = r#"
         <idx:entry name="main" scriptable="yes" spell="yes">
-"#);
+"#.to_string();
 
-        format_headword(&mut out_str, &term);
-        format_pronunciations(&mut out_str, &term);
-        format_classes(&mut out_str, &term);
+        format_headword(&mut out_str, term);
+        format_pronunciations(&mut out_str, term);
+        format_classes(&mut out_str, term);
 
         out_str.push_str("\n</idx:entry>\n");
 
@@ -101,7 +101,7 @@ fn format_pronunciations(out_str: &mut String, term: &Term) {
             continue;
         }
         let pronunciations = term.pronunciations.get(name).unwrap();
-        if name.len() > 0 && name != "wiki" {
+        if !name.is_empty() && name != "wiki" {
             out_str.push_str(format!("<i>{}</i>: ", name).as_str());
         }
         out_str.push_str(escape_xml(pronunciations.join(", ").as_str()).as_str());
@@ -147,13 +147,13 @@ fn format_meanings(out_str: &mut String, meanings: &HashMap<String, Meaning>) {
 }
 
 fn format_translations(out_str: &mut String, translations: &HashSet<&String>) {
-    let transl = translations.into_iter().map(|&string| string.clone()).collect::<Vec<String>>();
+    let transl = translations.iter().map(|&string| string.clone()).collect::<Vec<String>>();
 
     out_str.push_str(format!("<li>{}</li>\n", escape_xml(transl.join(" | ").as_str())).as_str());
 }
 
 fn start_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
-    f.write(r#"<html xmlns:math="http://exslt.org/math" xmlns:svg="http://www.w3.org/2000/svg"
+    f.write_all(r#"<html xmlns:math="http://exslt.org/math" xmlns:svg="http://www.w3.org/2000/svg"
     xmlns:tl="https://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf" xmlns:saxon="http://saxon.sf.net/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:cx="https://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf"
@@ -172,7 +172,7 @@ fn start_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
 }
 
 fn end_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
-    f.write(r#"
+    f.write_all(r#"
     </mbp:frameset>
 </body>
 </html>
@@ -185,7 +185,7 @@ fn create_kindle_opf_file(dict: &Dictionary, output_path: &str, files: &Vec<(Str
     let opf_file_path = format!("{}/content.opf", output_path);
     let mut f = fs::File::create(opf_file_path)?;
 
-    f.write(format!(r#"<?xml version="1.0"?>
+    f.write_all(format!(r#"<?xml version="1.0"?>
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="en-cs-dict">
     <metadata>
         <dc:title>{}</dc:title>
@@ -202,20 +202,20 @@ fn create_kindle_opf_file(dict: &Dictionary, output_path: &str, files: &Vec<(Str
 "#, dict.title, dict.author, dict.source_language, dict.source_language, dict.target_language).as_bytes())?;
     for file in files {
         let id = &file.0;
-        f.write(format!("<item id=\"{id}\" href=\"{id}.xhtml\" media-type=\"application/xhtml+xml\" />\n").as_bytes())?;
+        f.write_all(format!("<item id=\"{id}\" href=\"{id}.xhtml\" media-type=\"application/xhtml+xml\" />\n").as_bytes())?;
     }
 
-    f.write(r#"
+    f.write_all(r#"
     </manifest>
     <spine>
 "#.as_bytes())?;
 
     for file in files {
         let id = &file.0;
-        f.write(format!("<itemref idref=\"{id}\"/>\n").as_bytes())?;
+        f.write_all(format!("<itemref idref=\"{id}\"/>\n").as_bytes())?;
     }
 
-    f.write(r#"
+    f.write_all(r#"
     </spine>
 </package>
 "#.as_bytes())?;

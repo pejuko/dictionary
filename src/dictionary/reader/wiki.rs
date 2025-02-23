@@ -167,8 +167,8 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
                         continue;
                     }
 
-                    for i in 2..parts.len() {
-                        let pronunciation = parts[i].trim();
+                    for part in parts.iter().skip(2) {
+                        let pronunciation = part.trim();
                         if !pronunciation.starts_with("/") {
                             continue;
                         }

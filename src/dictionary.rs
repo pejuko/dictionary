@@ -107,7 +107,7 @@ impl Dictionary {
 
     pub fn add_pronunciation(&mut self, headword: &str, name: &str, pronunciation: &str) {
         let entry = self.terms.entry(Self::word_to_key(headword)).or_insert(Term::new(headword));
-        let pron_entry = entry.pronunciations.entry(name.to_string()).or_insert(PronunciationType::new());
+        let pron_entry = entry.pronunciations.entry(name.to_string()).or_default();
         pron_entry.push(pronunciation.to_string());
     }
 
@@ -115,7 +115,7 @@ impl Dictionary {
         let entry = self.terms.entry(Self::word_to_key(headword)).or_insert(Term::new(headword));
         let inflections = Self::inflect(headword, word_class.clone(), &self.re);
         entry.inflections.extend(inflections);
-        let class_entry = entry.classes.entry(word_class).or_insert(MeaningType::new());
+        let class_entry = entry.classes.entry(word_class).or_default();
         let meaning_entry = class_entry.entry(Self::word_to_key(meaning.description.as_str())).or_insert(Meaning::new(meaning.description.as_str()));
         meaning_entry.translations.extend(meaning.translations);
     }
@@ -139,17 +139,17 @@ impl Dictionary {
         } else if re.re_o.is_match(headword) {
             match headword {
                 "hero" | "potato" | "tomato" => new_word.push_str("es"),
-                _ => new_word.push_str("s"),
+                _ => new_word.push('s'),
             }
         } else if re.re_y.is_match(headword) {
             if let Some(captures) = re.re_y_with_consonant.captures(headword) {
                 new_word = captures.get(1).unwrap().as_str().to_string();
                 new_word.push_str("ies");
             } else {
-                new_word.push_str("s");
+                new_word.push('s');
             }
         } else {
-            new_word.push_str("s");
+            new_word.push('s');
         }
 
         inflections.push(new_word);
@@ -161,6 +161,10 @@ impl Dictionary {
 
     pub fn len(&self) -> usize {
         self.terms.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn to_kindle(&self, output_path: &str, force: bool) -> Result<(), Box<dyn Error>> {
@@ -183,6 +187,12 @@ impl WordRegex {
     }
 }
 
+impl Default for WordRegex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Term {
     pub fn new(headword: &str) -> Term {
         Term {
@@ -202,7 +212,7 @@ impl Term {
                 return true;
         }
 
-        return false;
+        false
     }
 }
 

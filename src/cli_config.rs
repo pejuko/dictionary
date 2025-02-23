@@ -78,7 +78,7 @@ impl CliConfig {
     fn get_file_name(param: Option<String>) -> Result<String, &'static str> {
         let file_name = CliConfig::get_param_value(param)?;
         match fs::exists(&file_name) {
-            Ok(res) => if res == true { Ok(file_name) } else { Err("File does not exist") },
+            Ok(res) => if res { Ok(file_name) } else { Err("File does not exist") },
             Err(_) => Err("Cannot find file"),
         }
     }
@@ -90,7 +90,7 @@ impl CliConfig {
             return Err("Pronunciation must have 2 parts: '<name>:<filename>'");
         }
 
-        let name = name_and_file_name.get(0).unwrap().trim().to_string();
+        let name = name_and_file_name.first().unwrap().trim().to_string();
         let file_name = CliConfig::get_file_name(Some(name_and_file_name.get(1).unwrap().to_string()))?;
 
         Ok((name, file_name))
@@ -141,5 +141,11 @@ Examples:
     cargo run --release -- -w data/enwiktionary.xml.bz2 -wp Czech -o data/kindle-en-cs -t "English-Czech dictionary" -a pejuko
 "#
         )
+    }
+}
+
+impl Default for CliConfig {
+    fn default() -> Self {
+        Self::new()
     }
 }
