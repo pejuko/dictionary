@@ -1,9 +1,9 @@
 use std::collections::HashSet;
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 use std::fs;
 use std::io::Write;
 
-use crate::dictionary::{Dictionary, Meaning, Term};
+use crate::dictionary::{Dictionary, MeaningType, Term};
 
 use super::escape_xml;
 
@@ -123,7 +123,7 @@ fn format_classes(out_str: &mut String, term: &Term) {
     }
 }
 
-fn format_meanings(out_str: &mut String, meanings: &HashMap<String, Meaning>) {
+fn format_meanings(out_str: &mut String, meanings: &MeaningType) {
     let mut translations = HashSet::new();
     for meaning in meanings.values() {
         for translation in &meaning.translations {
@@ -137,7 +137,9 @@ fn format_meanings(out_str: &mut String, meanings: &HashMap<String, Meaning>) {
     }
 
     out_str.push_str("<ol>\n");
-    for meaning in meanings.values() {
+    let mut values = meanings.values().collect::<Vec<_>>();
+    values.sort_by(|a, b| a.order.cmp(&b.order));
+    for meaning in values {
         if meaning.description.is_empty() {
             continue;
         }

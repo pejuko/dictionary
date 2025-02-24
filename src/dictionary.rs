@@ -55,6 +55,7 @@ pub enum WordClass {
 
 #[derive(Debug, Clone)]
 pub struct Meaning {
+    order: usize,
     description: String,
     translations: TranslationType,
 }
@@ -111,13 +112,43 @@ impl Dictionary {
         pron_entry.push(pronunciation.to_string());
     }
 
+    pub fn get_meaning_position(&self, headword: &str, word_class: &WordClass, meaning: &Meaning) -> usize {
+        let key = Self::word_to_key(headword);
+        if let Some(term) = self.terms.get(&key) {
+            if let Some(class) = term.classes.get(word_class) {
+                let key = Self::word_to_key(&meaning.description);
+                if let Some(m) = class.get(&key) {
+                    return m.order;
+                } else {
+                    return class.len();
+                }
+            }
+        }
+
+        0
+    }
+
     pub fn add_meaning(&mut self, headword: &str, word_class: WordClass, meaning: Meaning) {
-        let entry = self.terms.entry(Self::word_to_key(headword)).or_insert(Term::new(headword));
+        let order = self.get_meaning_position(headword, &word_class, &meaning);
+
+        let entry = self.terms
+            .entry(Self::word_to_key(headword))
+            .or_insert(Term::new(headword));
+
         let inflections = Self::inflect(headword, word_class.clone(), &self.re);
+
         entry.inflections.extend(inflections);
-        let class_entry = entry.classes.entry(word_class).or_default();
-        let meaning_entry = class_entry.entry(Self::word_to_key(meaning.description.as_str())).or_insert(Meaning::new(meaning.description.as_str()));
+
+        let class_entry = entry.classes
+            .entry(word_class)
+            .or_default();
+
+        let meaning_entry = class_entry
+            .entry(Self::word_to_key(meaning.description.as_str()))
+            .or_insert(Meaning::new(meaning.description.as_str()));
+
         meaning_entry.translations.extend(meaning.translations);
+        meaning_entry.order = order;
     }
 
     fn inflect(headword: &str, word_class: WordClass, re: &WordRegex) -> Vec<String> {
@@ -237,6 +268,7 @@ impl WordClass {
 impl Meaning {
     pub fn new(description: &str) -> Meaning {
         Meaning {
+            order: 0,
             description: description.to_string(),
             translations: TranslationType::new(),
         }
