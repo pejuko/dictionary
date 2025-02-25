@@ -18,14 +18,20 @@ pub struct Dictionary {
 
     terms: HashMap<String, Term>,
     re: WordRegex,
+    irregular_verbs: IrregularVerbType
 }
+
+type IrregularVerbType = HashMap<String, Vec<String>>;
 
 #[derive(Debug)]
 pub struct WordRegex {
-    re_s: Regex,
-    re_o: Regex,
-    re_y: Regex,
-    re_y_with_consonant: Regex
+    en_re_e: Regex,
+    en_re_ie: Regex,
+    en_re_s: Regex,
+    en_re_o: Regex,
+    en_re_y: Regex,
+    en_re_y_with_consonant: Regex,
+    en_re_verb_ends_with_vowel_and_consonant: Regex,
 }
 
 #[derive(Debug)]
@@ -73,7 +79,25 @@ impl Dictionary {
             author: author.to_string(),
             terms: HashMap::new(),
             re: WordRegex::new(),
+            irregular_verbs: Self::generate_irregular_verbs(source_language),
         }
+    }
+
+    pub fn generate_irregular_verbs(source_language: &str) -> IrregularVerbType {
+        match source_language {
+            "en" => Self::en_get_irregular_verbs(),
+            _ => IrregularVerbType::new()
+        }
+    }
+
+    pub fn en_get_irregular_verbs() -> IrregularVerbType {
+        let mut verbs = IrregularVerbType::new();
+
+        verbs.insert("arise".to_string(), vec!["arose".to_string(), "arisen".to_string()]);
+        verbs.insert("be".to_string(), vec!["was".to_string(), "were".to_string(), "been".to_string(), "am".to_string(), "are".to_string(), "is".to_string()]);
+        verbs.insert("bear".to_string(), vec!["bore".to_string(), "borne".to_string()]);
+
+        verbs
     }
 
     pub fn build(cfg: &CliConfig) -> Result<Dictionary, Box<dyn Error>> {
@@ -135,7 +159,7 @@ impl Dictionary {
             .entry(Self::word_to_key(headword))
             .or_insert(Term::new(headword));
 
-        let inflections = Self::inflect(headword, word_class.clone(), &self.re);
+        let inflections = Self::inflect(&self.source_language, headword, word_class.clone(), &self.re, &self.irregular_verbs);
 
         entry.inflections.extend(inflections);
 
@@ -151,29 +175,52 @@ impl Dictionary {
         meaning_entry.order = order;
     }
 
-    fn inflect(headword: &str, word_class: WordClass, re: &WordRegex) -> Vec<String> {
+    fn inflect(source_language: &str, headword: &str, word_class: WordClass, re: &WordRegex, irregular: &IrregularVerbType) -> Vec<String> {
         let mut inflections = vec![];
 
         match word_class {
-            WordClass::Noun => Self::pluralize(&mut inflections, headword, re),
+            WordClass::Noun => Self::pluralize(&mut inflections, source_language, headword, re),
+            WordClass::Verb => Self::inflect_verb(&mut inflections, source_language, headword, re, irregular),
             _ => (),
         }
 
         inflections
     }
 
-    fn pluralize(inflections: &mut Vec<String>, headword: &str, re: &WordRegex) {
+    fn pluralize(inflections: &mut Vec<String>, source_language: &str, headword: &str, re: &WordRegex) {
+        match source_language {
+            "en" => Self::en_add_s(inflections, headword, re),
+            _ => (),
+        }
+    }
+
+    fn inflect_verb(inflections: &mut Vec<String>, source_language: &str, headword: &str, re: &WordRegex, irregular: &IrregularVerbType) {
+        match source_language {
+            "en" => {
+                Self::en_add_s(inflections, headword, re);
+                Self::en_add_ing(inflections, headword, re);
+                Self::en_add_ed(inflections, headword, re, irregular);
+            },
+            _ => (),
+        }
+    }
+
+    fn en_add_s(inflections: &mut Vec<String>, headword: &str, re: &WordRegex) {
         let mut new_word = headword.to_string();
 
-        if re.re_s.is_match(headword) {
+        if re.en_re_s.is_match(headword) {
             new_word.push_str("es");
-        } else if re.re_o.is_match(headword) {
+        } else if re.en_re_o.is_match(headword) {
             match headword {
-                "hero" | "potato" | "tomato" => new_word.push_str("es"),
+                "hero"
+                | "potato"
+                | "tomato"
+                | "go"
+                | "do" => new_word.push_str("es"),
                 _ => new_word.push('s'),
             }
-        } else if re.re_y.is_match(headword) {
-            if let Some(captures) = re.re_y_with_consonant.captures(headword) {
+        } else if re.en_re_y.is_match(headword) {
+            if let Some(captures) = re.en_re_y_with_consonant.captures(headword) {
                 new_word = captures.get(1).unwrap().as_str().to_string();
                 new_word.push_str("ies");
             } else {
@@ -181,6 +228,53 @@ impl Dictionary {
             }
         } else {
             new_word.push('s');
+        }
+
+        inflections.push(new_word);
+    }
+
+    fn en_add_ing(inflections: &mut Vec<String>, headword: &str, re: &WordRegex) {
+        let mut new_word = headword.to_string();
+
+        if headword.ends_with("ee") {
+            new_word.push_str("ing");
+        } else if let Some(captures) = re.en_re_e.captures(headword) {
+            new_word = format!("{}ing", captures.get(1).unwrap().as_str());
+        } else if let Some(captures) = re.en_re_ie.captures(headword) {
+            new_word = format!("{}ying", captures.get(1).unwrap().as_str());
+        } else if let Some(captures) = re.en_re_verb_ends_with_vowel_and_consonant.captures(headword) {
+            let ending = captures.get(1).unwrap().as_str();
+            new_word.push_str(ending);
+            new_word.push_str("ing");
+        } else {
+            new_word.push_str("ing");
+        }
+
+        inflections.push(new_word);
+    }
+
+    fn en_add_ed(inflections: &mut Vec<String>, headword: &str, re: &WordRegex, irregular: &IrregularVerbType) {
+        let mut new_word = headword.to_string();
+
+        if irregular.contains_key(&Self::word_to_key(headword)) {
+            let forms = irregular.get(&Self::word_to_key(headword)).unwrap();
+            for form in forms {
+                inflections.push(form.clone());
+            }
+            return;
+        }
+
+        if headword.ends_with("e") {
+            new_word.push('d');
+        } else if let Some(captures) = re.en_re_y_with_consonant.captures(headword) {
+            new_word = captures.get(1).unwrap().as_str().to_string();
+            new_word.push_str("ied");
+        } else if let Some(captures) = re.en_re_verb_ends_with_vowel_and_consonant.captures(headword) {
+            let ending = captures.get(1).unwrap().as_str();
+            new_word.push_str(ending);
+            new_word.push_str("ed");
+        } else {
+            new_word.push_str("ed");
         }
 
         inflections.push(new_word);
@@ -212,10 +306,13 @@ impl Dictionary {
 impl WordRegex {
     pub fn new() -> WordRegex {
         WordRegex {
-            re_s: Regex::new("(s|sh|ch|x)$").unwrap(),
-            re_o: Regex::new("o$").unwrap(),
-            re_y: Regex::new("y$").unwrap(),
-            re_y_with_consonant: Regex::new("(.*[bcdfghjklmnpqrstvwxyz])y$").unwrap()
+            en_re_e: Regex::new("(.*)e$").unwrap(),
+            en_re_ie: Regex::new("(.*)ie$").unwrap(),
+            en_re_s: Regex::new("(s|sh|ch|x)$").unwrap(),
+            en_re_o: Regex::new("o$").unwrap(),
+            en_re_y: Regex::new("y$").unwrap(),
+            en_re_y_with_consonant: Regex::new("(.*[bcdfghjklmnpqrstvwxyz])y$").unwrap(),
+            en_re_verb_ends_with_vowel_and_consonant: Regex::new(".*[aeiou]([bcdfghjklmnpqrstvwxyz])$").unwrap(),
         }
     }
 }
