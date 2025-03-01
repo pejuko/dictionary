@@ -2,8 +2,15 @@
 <html lang="{{ page.lang }}">
     <head>
         <meta charset="utf-8" />
+
+        <meta name="description" content="{{ page.title }}">
+        <meta name="keywords" content="{{ page.keywords }}">
+        <meta name="author" content="pejuko">
+
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
         <title>{{ page.title }}</title>
+
         <link rel="stylesheet" href="{{ site.baseurl }}/assets/main.css" />
     </head>
 
@@ -39,7 +46,15 @@
                 <tbody>
                     <tr>
                         <th>{{ page.dictionary_en_cs }}</th>
-                        <td><a href="https://github.com/pejuko/dictionary/releases/download/v0.1/english-czech-dictionary-pejuko-20250201.mobi">20250201</a></td>
+                        <td><a href="https://github.com/pejuko/dictionary/releases/download/v0.1/english-czech-dictionary-pejuko-20250201.mobi">en-cs-pejuko-20250201.mobi</a></td>
+                    </tr>
+                    <tr>
+                        <th>{{ page.dictionary_en_de }}</th>
+                        <td><a href="https://github.com/pejuko/dictionary/releases/download/v0.1/en-de-pejuko-20250201.mobi">en-de-pejuko-20250201.mobi</a></td>
+                    </tr>
+                    <tr>
+                        <th>{{ page.dictionary_en_es }}</th>
+                        <td><a href="https://github.com/pejuko/dictionary/releases/download/v0.1/en-es-pejuko-20250201.mobi">en-es-pejuko-20250201.mobi</a></td>
                     </tr>
                 </tbody>
             </table>

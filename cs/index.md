@@ -4,6 +4,7 @@
 
 layout: default
 lang: cs
+keywords: slovník, kindle, český, anglický, německý, španělský
 title: Slovníky pro čtečky
 license: Všechny slovníky mají licenci <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike License</a>
 intro: "Všechny slovníky, které naleznete níže, jsou generovány z <a href=\"https://en.wiktionary.org\">anglické verze slovníku wiktionary</a> pomocí <a href=\"https://github.com/pejuko/dictionary\">konvertoru slovníků</a>."
@@ -11,4 +12,6 @@ installation_title: Instalace
 installation_kindle: "Připojte kindle ke svému počítači a nakopírujte stažený slovník do adresáře documents/dictionaries/ a odpojte zařízení."
 dictionaries: Slovníky
 dictionary_en_cs: Anglicko-Český
+dictionary_en_de: Anglicko-Německý
+dictionary_en_es: Anglicko-Španělský
 ---
