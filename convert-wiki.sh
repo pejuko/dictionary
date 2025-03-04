@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
 BASE_DIR="data/kindle-wiki"
-TIMESTAMP="20250201"
+TIMESTAMP="$1"
+#TIMESTAMP="20250301"
+
+if [ -z "$TIMESTAMP" ]; then
+  echo "Usage: convert-wiki.sh <WIKTIONARY TIMESTAMP>"
+  echo "Example:"
+  echo "    ./convert-wiki.sh 20250301"
+  exit 1
+fi
 
 convert() {
   local SOURCE_LANGUAGE=$1
@@ -29,4 +37,6 @@ convert() {
 convert en cs Czech
 convert en de German
 convert en es Spanish
+convert en sk Slovak
+convert en zh Mandarin
 
