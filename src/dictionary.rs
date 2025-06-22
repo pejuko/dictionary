@@ -130,6 +130,29 @@ impl Dictionary {
         Ok(dict)
     }
 
+    pub fn reverse(&self, reversed_title: &str) -> Dictionary {
+        let mut dict = Dictionary::new(
+            self.target_language.as_str(),
+            self.source_language.as_str(),
+            reversed_title,
+            self.author.as_str(),
+        );
+
+        for (_headword_key, term) in self.terms.iter() {
+            for (word_class, meanings) in term.classes.iter() {
+                for (_, meaning) in meanings.iter() {
+                    for translation in meaning.translations.iter() {
+                        let mut m = Meaning::new(meaning.description.as_str());
+                        m.add_translation(&term.headword);
+                        dict.add_meaning(translation, word_class.clone(), m);
+                    }
+                }
+            }
+        }
+
+        dict
+    }
+
     pub fn add_pronunciation(&mut self, headword: &str, name: &str, pronunciation: &str) {
         let entry = self.terms.entry(Self::word_to_key(headword)).or_insert(Term::new(headword));
         let pron_entry = entry.pronunciations.entry(name.to_string()).or_default();

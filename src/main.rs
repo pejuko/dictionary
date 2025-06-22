@@ -36,6 +36,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         dict.to_kindle(output_path, config.force)?;
     }
 
+    if let Some(reverse_output_path) = &config.reverse_output_path {
+        if let Some(reverse_title) = &config.reverse_title {
+            let reversed_dict = dict.reverse(reverse_title);
+            println!("Records in reversed dictionary: {}", reversed_dict.len());
+            reversed_dict.to_kindle(reverse_output_path, config.force)?;
+        } else {
+            Err("No reverse title (-rt) is specified.")?;
+        }
+    }
 
     Ok(())
 }

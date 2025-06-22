@@ -14,7 +14,8 @@ pub struct CliConfig {
     pub author: String,
     pub force: bool,
     pub print_help: bool,
-
+    pub reverse_output_path: Option<String>,
+    pub reverse_title: Option<String>,
 }
 
 impl CliConfig {
@@ -32,6 +33,8 @@ impl CliConfig {
             title: "".to_string(),
             author: "".to_string(),
             print_help: false,
+            reverse_output_path: None,
+            reverse_title: None,
         }
     }
 
@@ -48,6 +51,7 @@ impl CliConfig {
             match arg.as_str() {
                 "-i" => config.input_file_path = Some(Self::get_file_name(args.next())?),
                 "-o" => config.output_path = Some(Self::get_param_value(args.next())?),
+                "-ro" => config.reverse_output_path = Some(Self::get_param_value(args.next())?),
                 "-w" => config.wiki_file_path = Some(Self::get_param_value(args.next())?),
                 "-s" => config.query = Some(Self::get_param_value(args.next())?),
                 "-wp" => config.wiki_prefix = Some(Self::get_param_value(args.next())?),
@@ -56,6 +60,7 @@ impl CliConfig {
                 "-sl" => config.source_language = Self::get_param_value(args.next())?,
                 "-tl" => config.target_language = Self::get_param_value(args.next())?,
                 "-t" => config.title = Self::get_param_value(args.next())?,
+                "-rt" => config.reverse_title = Some(Self::get_param_value(args.next())?),
                 "-a" => config.author = Self::get_param_value(args.next())?,
                 "-h" => config.print_help = true,
                 _ => return Err("Illegal argument"),
@@ -117,6 +122,8 @@ Dictionary parameters:
 
     -o      Output directory
 
+    -ro      Output directory for reversed dictionary
+
     -s      Search given word in builded dictionary.
 
     -f      Force output if the output directory exists and overwrite the files.
@@ -126,6 +133,8 @@ Dictionary parameters:
     -tl     Target language. Default cs.
 
     -t      Dictionary title.
+
+    -rt      Dictionary title for reversed dictionary.
 
     -a      Author.
 
