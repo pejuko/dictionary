@@ -10,10 +10,19 @@ license: All dictionaries are licensed under <a href="https://creativecommons.or
 intro: "Dictionaries, which you can found below, are all generated from <a href=\"https://en.wiktionary.org\">english wiktionary</a> using <a href=\"https://github.com/pejuko/dictionary\">dictionary converter</a>."
 installation_title: Installation
 installation_kindle: "Connect kindle to your computer and copy downloaded dictionary to the Kindle's <b>documents/dictionaries/</b> folder and disconnect the device."
+
 dictionaries: Dictionaries
 dictionary_en_cs: English-Czech
 dictionary_en_de: English-German
 dictionary_en_es: English-Spanish
 dictionary_en_sk: English-Slovak
 dictionary_en_zh: English-Mandarin
+
+reversed_dictionaries: Reversed dictionaries
+reversed_dictionaries_description: Reversed dictionaries are dictionaries reversed by machine from the original version.
+dictionary_cs_en: Czech-English
+dictionary_de_en: German-English
+dictionary_es_en: Spanish-English
+dictionary_sk_en: Slovak-English
+dictionary_zh_en: Mandarin-English
 ---
