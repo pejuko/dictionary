@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+TIMESTAMP="$1"
+
+if [ -z "$TIMESTAMP" ]; then
+    echo "Usage: convert-en-cs.sh <WIKTIONARY TIMESTAMP>"
+    echo "Example:"
+    echo "    ./convert-en-cs.sh 20250301"
+    exit 1
+fi
+
 DIR="data/kindle-en-cs"
 
 cargo run --release --\
@@ -7,8 +16,8 @@ cargo run --release --\
     -o $DIR \
     -f \
     -p US:data/en_US.txt -p UK:data/en_UK.txt \
-    -w data/enwiktionary-20250201-pages-articles.xml.bz2 -wp Czech \
-    -t "English-Czech Dictionary (pejuko)" \
+    -w data/enwiktionary-$TIMESTAMP-pages-articles.xml.bz2 -wp Czech \
+    -t "English-Czech Dictionary GNU/FDL (pejuko)" \
     -sl en \
     -tl cs \
     -a pejuko \
