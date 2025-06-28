@@ -17,6 +17,8 @@ dictionary_en_de: Anglicko-Německý
 dictionary_en_es: Anglicko-Španělský
 dictionary_en_sk: Anglicko-Slovenský
 dictionary_en_zh: Anglicko-Čínský
+dictionary_en_sh_cyrillic: Anglicko-Srbsko-Chorvatský (Cyrillic)
+dictionary_en_sh_roman: Anglicko-Srbsko-Chorvatský (Roman)
 
 reversed_dictionaries: Obrácené slovníky
 reversed_dictionaries_description: Obrácené slovníky jsou slovníky generované strojově z původních slovníků.
@@ -25,4 +27,6 @@ dictionary_de_en: Německo-Anglický
 dictionary_es_en: Španělsko-Anglický
 dictionary_sk_en: Slovensko-Anglický
 dictionary_zh_en: Čínsko-Anglický
+dictionary_sh_cyrillic_en: Srbsko-Chorvatsko-Anglický (Cyrillic)
+dictionary_sh_roman_en: Srbsko-Chorvatsko-Anglický (Roman)
 ---

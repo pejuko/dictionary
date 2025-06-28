@@ -17,6 +17,8 @@ dictionary_en_de: English-German
 dictionary_en_es: English-Spanish
 dictionary_en_sk: English-Slovak
 dictionary_en_zh: English-Mandarin
+dictionary_en_sh_cyrillic: English-Serbo-Croatian (Cyrillic)
+dictionary_en_sh_roman: English-Serbo-Croatian (Roman)
 
 reversed_dictionaries: Reversed dictionaries
 reversed_dictionaries_description: Reversed dictionaries are dictionaries reversed by machine from the original version.
@@ -25,4 +27,6 @@ dictionary_de_en: German-English
 dictionary_es_en: Spanish-English
 dictionary_sk_en: Slovak-English
 dictionary_zh_en: Mandarin-English
+dictionary_sh_cyrillic_en: Serbo-Croatian-English (Cyrillic)
+dictionary_sh_roman_en: Serbo-Croatian-English (Roman)
 ---
