@@ -201,7 +201,7 @@ fn create_kindle_opf_file(dict: &Dictionary, output_path: &str, files: &Vec<(Str
     </metadata>
     <manifest>
         <item href="dict.png" id="my-cover-image" media-type="image/png" />
-"#, dict.title, dict.author, dict.source_language, dict.source_language, dict.target_language).as_bytes())?;
+"#, dict.title, dict.author, /* dict.source_language */ "en", dict.source_language, dict.target_language).as_bytes())?;
     for file in files {
         let id = &file.0;
         f.write_all(format!("<item id=\"{id}\" href=\"{id}.xhtml\" media-type=\"application/xhtml+xml\" />\n").as_bytes())?;

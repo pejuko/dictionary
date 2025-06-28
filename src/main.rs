@@ -27,6 +27,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let dict = Dictionary::build(&config)?;
 
     println!("Records: {}", dict.len());
+    println!("Non-empty records: {}", dict.non_empty_len());
+    println!("Translated records: {}", dict.translations_len());
 
     if let Some(query) = &config.query {
         println!("{:#?}", dict.lookup(query));

@@ -310,6 +310,20 @@ impl Dictionary {
     pub fn len(&self) -> usize {
         self.terms.len()
     }
+    
+    pub fn non_empty_len(&self) -> usize {
+        self.terms.iter().filter(|(_, term)| !term.is_empty()).count()
+    }
+    
+    pub fn translations_len(&self) -> usize {
+        self.terms.iter().filter(|(_, term)| 
+            term.classes.iter().filter(|(_, meaning)| 
+                meaning.iter().filter(|(_, m)| 
+                    m.translations.len() > 0
+                ).count() > 0
+            ).count() > 0
+        ).count()
+    }
 
     /*
     pub fn is_empty(&self) -> bool {
@@ -361,7 +375,7 @@ impl Term {
             return true;
         }
 
-        if self.pronunciations.is_empty() && self.classes.is_empty() {
+        if /* self.pronunciations.is_empty() && */ self.classes.is_empty() {
                 return true;
         }
 

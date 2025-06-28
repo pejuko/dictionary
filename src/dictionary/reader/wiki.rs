@@ -32,16 +32,19 @@ struct Re {
     data: Regex,
     translations_title: Regex,
     language: Regex,
+    translation_name: Regex,
     prefix: Regex,
 }
 
 impl Re {
     fn new(lang_prefix: &str) -> Re {
         let prefix = format!("^\\*.?\\s{}:", lang_prefix);
+        let name = String::from("^\\* ([^:]+):");
         Re {
             data: Regex::new(r"\{\{(.*?)}}").unwrap(),
             translations_title: Regex::new(r"^([^/]+)/translations$").unwrap(),
             language: Regex::new(r"^==([^=]+)==$").unwrap(),
+            translation_name: Regex::new(&name).unwrap(),
             prefix: Regex::new(&prefix).unwrap(),
         }
     }
@@ -143,6 +146,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
     let mut current_word_class = WordClass::Unknown;
     let mut current_meaning = Meaning::new("");
     let mut current_language = String::from("");
+    let mut current_translation_name = String::from("");
 
     for line in page.content.lines() {
         if let Some(captures) = re.language.captures(line) {
@@ -151,6 +155,10 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
 
         if !current_language.is_empty() && current_language != "english" {
             break;
+        }
+        
+        if let Some(captures) = re.translation_name.captures(line) {
+            current_translation_name = captures.get(1).unwrap().as_str().to_lowercase();
         }
 
         for data in re.data.find_iter(line) {
@@ -210,6 +218,9 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
                 "en-prep" => current_word_class = WordClass::Preposition,
 
                 _ => if parts.len() > 2 && re.prefix.is_match(line) {
+                    if dict.target_language == "sh" && current_translation_name != "serbo-croatian" {
+                        continue;
+                    }
                     let translation = parts[2].trim();
                     current_meaning.add_translation(translation);
                 }
