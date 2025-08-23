@@ -10,10 +10,17 @@ pub fn read_czech(dict: &mut Dictionary, path: &str) -> Result<(), Box<dyn Error
             continue;
         }
 
-        let mut meaning = Meaning::new("");
-        meaning.add_translation(line[1].trim());
+        let headword = line[0].trim();
+        let translation = line[1].trim();
 
-        let word_class = match line[2].as_str() {
+        if headword.is_empty() || translation.is_empty() {
+            continue;
+        }
+
+        let mut meaning = Meaning::new("");
+        meaning.add_translation(translation);
+
+        let word_class = match line[2].trim() {
             "n:" => WordClass::Noun,
             "v:" => WordClass::Verb,
             "adv:" => WordClass::Adverb,
@@ -23,7 +30,7 @@ pub fn read_czech(dict: &mut Dictionary, path: &str) -> Result<(), Box<dyn Error
             _ => WordClass::Unknown
         };
 
-        dict.add_meaning(line[0].trim(), word_class, meaning);
+        dict.add_meaning(headword, &word_class, &meaning);
     }
 
     Ok(())

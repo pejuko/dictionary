@@ -186,7 +186,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
 
                 "trans-top" => {
                     if !current_meaning.is_empty() {
-                        dict.add_meaning(headword, current_word_class.clone(), current_meaning.clone());
+                        dict.add_meaning(headword, &current_word_class, &current_meaning);
                     }
 
                     if parts.len() < 2 {
@@ -203,7 +203,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
 
                 "trans-bottom" => {
                     if !current_meaning.is_empty() {
-                        dict.add_meaning(headword, current_word_class.clone(), current_meaning.clone());
+                        dict.add_meaning(headword, &current_word_class, &current_meaning);
                         current_meaning = Meaning::new("");
                     }
                 }
@@ -229,6 +229,6 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
     }
 
     if !current_meaning.is_empty() {
-        dict.add_meaning(headword, current_word_class.clone(), current_meaning.clone());
+        dict.add_meaning(headword, &current_word_class, &current_meaning);
     }
 }

@@ -59,7 +59,7 @@ pub enum WordClass {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Meaning {
     order: usize,
     description: String,
@@ -144,7 +144,7 @@ impl Dictionary {
                     for translation in meaning.translations.iter() {
                         let mut m = Meaning::new(meaning.description.as_str());
                         m.add_translation(&term.headword);
-                        dict.add_meaning(translation, word_class.clone(), m);
+                        dict.add_meaning(translation, word_class, &m);
                     }
                 }
             }
@@ -175,30 +175,30 @@ impl Dictionary {
         0
     }
 
-    pub fn add_meaning(&mut self, headword: &str, word_class: WordClass, meaning: Meaning) {
-        let order = self.get_meaning_position(headword, &word_class, &meaning);
+    pub fn add_meaning(&mut self, headword: &str, word_class: &WordClass, meaning: &Meaning) {
+        let order = self.get_meaning_position(headword, word_class, meaning);
 
         let entry = self.terms
             .entry(Self::word_to_key(headword))
             .or_insert(Term::new(headword));
 
-        let inflections = Self::inflect(&self.source_language, headword, word_class.clone(), &self.re, &self.irregular_verbs);
+        let inflections = Self::inflect(&self.source_language, headword, word_class, &self.re, &self.irregular_verbs);
 
         entry.inflections.extend(inflections);
 
         let class_entry = entry.classes
-            .entry(word_class)
+            .entry(word_class.clone())
             .or_default();
 
         let meaning_entry = class_entry
             .entry(Self::word_to_key(meaning.description.as_str()))
             .or_insert(Meaning::new(meaning.description.as_str()));
 
-        meaning_entry.translations.extend(meaning.translations);
+        meaning_entry.translations.extend(meaning.translations.clone());
         meaning_entry.order = order;
     }
 
-    fn inflect(source_language: &str, headword: &str, word_class: WordClass, re: &WordRegex, irregular: &IrregularVerbType) -> Vec<String> {
+    fn inflect(source_language: &str, headword: &str, word_class: &WordClass, re: &WordRegex, irregular: &IrregularVerbType) -> Vec<String> {
         let mut inflections = vec![];
 
         match word_class {
@@ -314,12 +314,12 @@ impl Dictionary {
     pub fn non_empty_len(&self) -> usize {
         self.terms.iter().filter(|(_, term)| !term.is_empty()).count()
     }
-    
+ 
     pub fn translations_len(&self) -> usize {
         self.terms.iter().filter(|(_, term)| 
             term.classes.iter().filter(|(_, meaning)| 
                 meaning.iter().filter(|(_, m)| 
-                    m.translations.len() > 0
+                    !m.translations.is_empty()
                 ).count() > 0
             ).count() > 0
         ).count()
