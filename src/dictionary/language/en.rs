@@ -110,10 +110,6 @@ impl English {
 }
 
 impl LanguageProcessor for English {
-    fn get_language_code(&self) -> String {
-        "en".to_string()
-    }
-
     fn inflect(&self, headword: &str, word_class: &WordClass) -> Vec<String> {
         let mut inflections = vec![];
 

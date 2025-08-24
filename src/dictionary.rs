@@ -9,7 +9,6 @@ use reader::{gnu_fdl, pronunciation, wiki};
 use writer::kindle;
 
 use crate::cli_config::CliConfig;
-use crate::dictionary::language::en::English;
 use crate::dictionary::language::LanguageProcessor;
 
 pub struct Dictionary {
@@ -19,7 +18,7 @@ pub struct Dictionary {
     author: String,
 
     terms: HashMap<String, Term>,
-    language_processor: Box<dyn LanguageProcessor>,
+    language_processor: Option<Box<dyn LanguageProcessor>>,
 }
 
 
@@ -67,7 +66,7 @@ impl Dictionary {
             title: title.to_string(),
             author: author.to_string(),
             terms: HashMap::new(),
-            language_processor: Box::new(English::new()),
+            language_processor: language::get_language_processor(source_language),
         }
     }
 
@@ -153,8 +152,8 @@ impl Dictionary {
             .entry(Self::word_to_key(headword))
             .or_insert(Term::new(headword));
 
-        if self.source_language == self.language_processor.get_language_code() {
-            let inflections = self.language_processor.inflect(headword, word_class);
+        if let Some(language_processor) = &self.language_processor {
+            let inflections = language_processor.inflect(headword, word_class);
             entry.inflections.extend(inflections);
         }
 
