@@ -113,7 +113,7 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
             }
 
             Ok(Event::Text(e)) => {
-                let str = e.unescape().unwrap().into_owned();
+                let str = e.decode().unwrap().into_owned();
                 match state {
                     State::Title => {
                         page.title.push_str(&str);
