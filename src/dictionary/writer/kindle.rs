@@ -43,7 +43,7 @@ fn create_kindle_content_files(dict: &Dictionary, output_path: &str) -> Result<V
         let id = format!("content{:04}", i);
         let path = format!("{}/{}.xhtml", output_path, id);
         create_kindle_content_file(dict, &keys[pos..max], path.as_str())?;
-        files.push((id.clone(), path.clone()));
+        files.push((id, path));
         pos += batch_size;
         i += 1;
     }
@@ -149,7 +149,7 @@ fn format_meanings(out_str: &mut String, meanings: &MeaningType) {
 }
 
 fn format_translations(out_str: &mut String, translations: &HashSet<&String>) {
-    let transl = translations.iter().map(|&string| string.clone()).collect::<Vec<String>>();
+    let transl: Vec<&str> = translations.iter().map(|string| string.as_str()).collect();
 
     out_str.push_str(format!("<li>{}</li>\n", escape_xml(transl.join(" | ").as_str())).as_str());
 }
