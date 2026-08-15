@@ -1,5 +1,6 @@
 mod cli_config;
 mod dictionary;
+mod download;
 
 use std::{env, process};
 use std::error::Error;
@@ -16,6 +17,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     if config.print_help {
         CliConfig::print_help();
         process::exit(0);
+    }
+
+    if config.default_mode {
+        let path = download::ensure_wiktionary()?;
+        println!("Wiktionary available at: {}", path.display());
+        return Ok(());
     }
 
     println!("{:#?}", &config);

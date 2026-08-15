@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+. ./common.sh
+
 DIR="data/kindle-en-de"
 
 cargo run --release --\
@@ -12,4 +14,4 @@ cargo run --release --\
     -tl de \
     -a pejuko \
     && \
-    wine ~/.wine/drive_c/users/pejuko/Local\ Settings/Application\ Data/Amazon/Kindle\ Previewer\ 3/lib/fc/bin/kindlegen.exe -c1 -gen_ff_mobi7 -dont_append_source $DIR/content.opf
+    wine "$KINDLEGEN" -c1 -gen_ff_mobi7 -dont_append_source $DIR/content.opf

@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
 
+. ./common.sh
+
 BASE_DIR="data/kindle-wiki"
 TIMESTAMP="$1"
 #TIMESTAMP="20250301"
 
 if [ -z "$TIMESTAMP" ]; then
-    echo "Usage: convert-wiki.sh <WIKTIONARY TIMESTAMP>"
-    echo "Example:"
-    echo "    ./convert-wiki.sh 20250301"
-    exit 1
+    # echo "Usage: convert-wiki.sh <WIKTIONARY TIMESTAMP>"
+    # echo "Example:"
+    # echo "    ./convert-wiki.sh 20250301"
+    # exit 1
+    TIMESTAMP="latest"
+    # let's check if we have latest file or download the latest
+    cargo run --release
 fi
 
 build() {
     local DIR=$1
     local REVERSE_DIR=$2
 
-    wine ~/.wine/drive_c/users/pejuko/Local\ Settings/Application\ Data/Amazon/Kindle\ Previewer\ 3/lib/fc/bin/kindlegen.exe -c1 -gen_ff_mobi7 -dont_append_source "$DIR/content.opf"
-    wine ~/.wine/drive_c/users/pejuko/Local\ Settings/Application\ Data/Amazon/Kindle\ Previewer\ 3/lib/fc/bin/kindlegen.exe -c1 -gen_ff_mobi7 -dont_append_source "$REVERSE_DIR/content.opf"
+    wine "$KINDLEGEN" -c1 -gen_ff_mobi7 -dont_append_source "$DIR/content.opf"
+    wine "$KINDLEGEN" -c1 -gen_ff_mobi7 -dont_append_source "$REVERSE_DIR/content.opf"
 }
 
 convert() {

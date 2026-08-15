@@ -14,6 +14,7 @@ pub struct CliConfig {
     pub author: String,
     pub force: bool,
     pub print_help: bool,
+    pub default_mode: bool,
     pub reverse_output_path: Option<String>,
     pub reverse_title: Option<String>,
 }
@@ -33,6 +34,7 @@ impl CliConfig {
             title: "".to_string(),
             author: "".to_string(),
             print_help: false,
+            default_mode: false,
             reverse_output_path: None,
             reverse_title: None,
         }
@@ -68,7 +70,7 @@ impl CliConfig {
         }
 
         if !has_params {
-            config.print_help = true;
+            config.default_mode = true;
         }
 
         Ok(config)
