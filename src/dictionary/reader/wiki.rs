@@ -79,17 +79,17 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<()> 
 
             Event::Start(e) => {
                 match e.name().as_ref() {
-                    b"page" => {
+                    "page" => {
                         state = State::Page;
                         page = Page::empty();
                     }
 
-                    b"title" => {
+                    "title" => {
                         state = State::Title;
                         page.title = "".to_string();
                     }
 
-                    b"text" => {
+                    "text" => {
                         state = State::Content;
                         page.content = "".to_string()
                     }
@@ -100,18 +100,18 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<()> 
 
             Event::End(e) => {
                 match e.name().as_ref() {
-                    b"page" => {
+                    "page" => {
                         state = State::None;
                         if !page.title.contains(":") {
                             read_wiki_page(dict, &page, &re)?;
                         }
                     }
 
-                    b"title" => {
+                    "title" => {
                         state = State::Page;
                     }
 
-                    b"text" => {
+                    "text" => {
                         state = State::Page;
                     }
 
@@ -120,9 +120,7 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<()> 
             }
 
             Event::Text(e) => {
-                let text = e.decode()
-                    .map(|t| t.into_owned())
-                    .map_err(Error::TextDecode)?;
+                let text = e.into_owned();
                 match state {
                     State::Title => {
                         page.title.push_str(&text);
