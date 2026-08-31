@@ -79,8 +79,7 @@ impl English {
     fn add_ed(&self, inflections: &mut Vec<String>, headword: &str) {
         let mut new_word = headword.to_string();
 
-        if self.irregular_verbs.contains_key(&Dictionary::word_to_key(headword)) {
-            let forms = self.irregular_verbs.get(&Dictionary::word_to_key(headword)).unwrap();
+        if let Some(forms) = self.irregular_verbs.get(&Dictionary::word_to_key(headword)) {
             for form in forms {
                 inflections.push(form.clone());
             }

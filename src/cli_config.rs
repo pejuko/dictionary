@@ -1,4 +1,7 @@
 use std::fs;
+use std::path::PathBuf;
+
+use crate::error::{Error, Result};
 
 #[derive(Debug)]
 pub struct CliConfig {
@@ -41,7 +44,7 @@ impl CliConfig {
     }
 
     // parse args into CliConfig
-    pub fn build(mut args: impl Iterator<Item=String>) -> Result<CliConfig, &'static str> {
+    pub fn build(mut args: impl Iterator<Item = String>) -> Result<CliConfig> {
         args.next();
 
         let mut config = Self::new();
@@ -51,21 +54,21 @@ impl CliConfig {
             has_params = true;
 
             match arg.as_str() {
-                "-i" => config.input_file_path = Some(Self::get_file_name(args.next())?),
-                "-o" => config.output_path = Some(Self::get_param_value(args.next())?),
-                "-ro" => config.reverse_output_path = Some(Self::get_param_value(args.next())?),
-                "-w" => config.wiki_file_path = Some(Self::get_param_value(args.next())?),
-                "-s" => config.query = Some(Self::get_param_value(args.next())?),
-                "-wp" => config.wiki_prefix = Some(Self::get_param_value(args.next())?),
-                "-p" => config.pronunciation_files.push(Self::get_pronunciation(args.next())?),
+                "-i" => config.input_file_path = Some(Self::get_file_name("-i", args.next())?),
+                "-o" => config.output_path = Some(Self::get_param_value("-o", args.next())?),
+                "-ro" => config.reverse_output_path = Some(Self::get_param_value("-ro", args.next())?),
+                "-w" => config.wiki_file_path = Some(Self::get_param_value("-w", args.next())?),
+                "-s" => config.query = Some(Self::get_param_value("-s", args.next())?),
+                "-wp" => config.wiki_prefix = Some(Self::get_param_value("-wp", args.next())?),
+                "-p" => config.pronunciation_files.push(Self::get_pronunciation("-p", args.next())?),
                 "-f" => config.force = true,
-                "-sl" => config.source_language = Self::get_param_value(args.next())?,
-                "-tl" => config.target_language = Self::get_param_value(args.next())?,
-                "-t" => config.title = Self::get_param_value(args.next())?,
-                "-rt" => config.reverse_title = Some(Self::get_param_value(args.next())?),
-                "-a" => config.author = Self::get_param_value(args.next())?,
+                "-sl" => config.source_language = Self::get_param_value("-sl", args.next())?,
+                "-tl" => config.target_language = Self::get_param_value("-tl", args.next())?,
+                "-t" => config.title = Self::get_param_value("-t", args.next())?,
+                "-rt" => config.reverse_title = Some(Self::get_param_value("-rt", args.next())?),
+                "-a" => config.author = Self::get_param_value("-a", args.next())?,
                 "-h" => config.print_help = true,
-                _ => return Err("Illegal argument"),
+                other => return Err(Error::IllegalArgument(other.to_string())),
             }
         }
 
@@ -77,35 +80,41 @@ impl CliConfig {
     }
 
     // convert Option to Result
-    fn get_param_value(param: Option<String>) -> Result<String, &'static str> {
-        param.ok_or("Missing parameter")
+    fn get_param_value(flag: &'static str, param: Option<String>) -> Result<String> {
+        param.ok_or_else(|| Error::MissingArgument { flag })
     }
 
     // get the param value and check if the file exists
-    fn get_file_name(param: Option<String>) -> Result<String, &'static str> {
-        let file_name = CliConfig::get_param_value(param)?;
-        match fs::exists(&file_name) {
-            Ok(res) => if res { Ok(file_name) } else { Err("File does not exist") },
-            Err(_) => Err("Cannot find file"),
+    fn get_file_name(flag: &'static str, param: Option<String>) -> Result<String> {
+        let file_name = Self::get_param_value(flag, param)?;
+        let path = PathBuf::from(&file_name);
+        match fs::metadata(&path) {
+            Ok(_) => Ok(file_name),
+            Err(err) => {
+                if err.kind() == std::io::ErrorKind::NotFound {
+                    Err(Error::FileNotFound { path })
+                } else {
+                    Err(Error::FileCheckFailed { path })
+                }
+            }
         }
     }
 
-    fn get_pronunciation(param: Option<String>) -> Result<(String, String), &'static str> {
-        let name_and_file_name = CliConfig::get_param_value(param)?;
-        let name_and_file_name = name_and_file_name.split(":").collect::<Vec<&str>>();
-        if name_and_file_name.len() != 2 {
-            return Err("Pronunciation must have 2 parts: '<name>:<filename>'");
+    fn get_pronunciation(flag: &'static str, param: Option<String>) -> Result<(String, String)> {
+        let value = Self::get_param_value(flag, param)?;
+        let parts: Vec<&str> = value.split(":").collect();
+        if parts.len() != 2 {
+            return Err(Error::PronunciationFormat(value));
         }
 
-        let name = name_and_file_name.first().unwrap().trim().to_string();
-        let file_name = CliConfig::get_file_name(Some(name_and_file_name.get(1).unwrap().to_string()))?;
+        let name = parts[0].trim().to_string();
+        let file_name = Self::get_file_name(flag, Some(parts[1].to_string()))?;
 
         Ok((name, file_name))
     }
 
     pub fn print_help() {
-        println!(
-r#"
+        println!(r#"
 All input files must be encoded in UTF-8.
 
 Dictionary parameters:

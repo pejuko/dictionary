@@ -1,20 +1,20 @@
 use std::collections::HashSet;
-use std::error::Error;
 use std::fs;
 use std::io::Write;
 
 use crate::dictionary::{Dictionary, MeaningType, Term};
+use crate::error::{Error, Result};
 
 use super::escape_xml;
 
-pub fn to_kindle(dict: &Dictionary, output_path: &str, force: bool) -> Result<(), Box<dyn Error>> {
+pub fn to_kindle(dict: &Dictionary, output_path: &str, force: bool) -> Result<()> {
     let output = fs::metadata(output_path);
     match output {
         Ok(metadata) => {
             if metadata.is_file() {
-                Err(format!("{} is a file, a directory expected.", output_path))?;
+                return Err(Error::OutputIsFile { path: output_path.to_string() });
             } else if metadata.is_dir() && !force {
-                Err(format!("{} is an existing directory, use -f to force.", output_path))?;
+                return Err(Error::OutputExists { path: output_path.to_string() });
             }
         },
 
@@ -29,7 +29,7 @@ pub fn to_kindle(dict: &Dictionary, output_path: &str, force: bool) -> Result<()
     Ok(())
 }
 
-fn create_kindle_content_files(dict: &Dictionary, output_path: &str) -> Result<Vec<(String, String)>, Box<dyn Error>> {
+fn create_kindle_content_files(dict: &Dictionary, output_path: &str) -> Result<Vec<(String, String)>> {
     let keys = dict.terms.keys().collect::<Vec<_>>();
     let mut pos: usize = 0;
     let batch_size: usize = 30_000;
@@ -50,13 +50,15 @@ fn create_kindle_content_files(dict: &Dictionary, output_path: &str) -> Result<V
     Ok(files)
 }
 
-fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_path: &str) -> Result<(), Box<dyn Error>> {
+fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_path: &str) -> Result<()> {
     let mut f = fs::File::create(content_file_path)?;
 
     start_kindle_content_file(&mut f)?;
 
     for &key in keys.iter() {
-        let term = dict.terms.get(key).unwrap();
+        let term = dict.terms
+            .get(key)
+            .ok_or_else(|| Error::Invariant(format!("term for key {key:?} not found")))?;
 
         if term.is_empty() {
             continue;
@@ -67,8 +69,8 @@ fn create_kindle_content_file(dict: &Dictionary, keys: &[&String], content_file_
 "#.to_string();
 
         format_headword(&mut out_str, term);
-        format_pronunciations(&mut out_str, term);
-        format_classes(&mut out_str, term);
+        format_pronunciations(&mut out_str, term)?;
+        format_classes(&mut out_str, term)?;
 
         out_str.push_str("\n</idx:entry>\n");
 
@@ -92,7 +94,7 @@ fn format_headword(out_str: &mut String, term: &Term) {
     out_str.push_str("</idx:orth></b><br />");
 }
 
-fn format_pronunciations(out_str: &mut String, term: &Term) {
+fn format_pronunciations(out_str: &mut String, term: &Term) -> Result<()> {
     let mut pron_keys = term.pronunciations.keys().collect::<Vec<_>>();
     pron_keys.sort();
     for name in pron_keys {
@@ -100,20 +102,25 @@ fn format_pronunciations(out_str: &mut String, term: &Term) {
             // skip wiki pronunciation if we have record from other sources
             continue;
         }
-        let pronunciations = term.pronunciations.get(name).unwrap();
+        let pronunciations = term.pronunciations.get(name).ok_or_else(|| {
+            Error::Invariant(format!("pronunciations for name {name:?} not found"))
+        })?;
         if !name.is_empty() && name != "wiki" {
             out_str.push_str(format!("<i>{}</i>: ", name).as_str());
         }
         out_str.push_str(escape_xml(pronunciations.join(", ").as_str()).as_str());
         out_str.push_str("<br />\n");
     }
+    Ok(())
 }
 
-fn format_classes(out_str: &mut String, term: &Term) {
+fn format_classes(out_str: &mut String, term: &Term) -> Result<()> {
     let mut classes = term.classes.keys().collect::<Vec<_>>();
     classes.sort();
     for word_class in classes {
-        let meanings = term.classes.get(word_class).unwrap();
+        let meanings = term.classes.get(word_class).ok_or_else(|| {
+            Error::Invariant(format!("meanings for word class {word_class:?} not found"))
+        })?;
         if meanings.is_empty() {
             continue;
         }
@@ -121,6 +128,7 @@ fn format_classes(out_str: &mut String, term: &Term) {
         out_str.push_str(word_class.as_str());
         format_meanings(out_str, meanings);
     }
+    Ok(())
 }
 
 fn format_meanings(out_str: &mut String, meanings: &MeaningType) {
@@ -154,7 +162,7 @@ fn format_translations(out_str: &mut String, translations: &HashSet<&String>) {
     out_str.push_str(format!("<li>{}</li>\n", escape_xml(transl.join(" | ").as_str())).as_str());
 }
 
-fn start_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
+fn start_kindle_content_file(f: &mut fs::File) -> Result<()> {
     f.write_all(r#"<html xmlns:math="http://exslt.org/math" xmlns:svg="http://www.w3.org/2000/svg"
     xmlns:tl="https://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf" xmlns:saxon="http://saxon.sf.net/"
     xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -173,7 +181,7 @@ fn start_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn end_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
+fn end_kindle_content_file(f: &mut fs::File) -> Result<()> {
     f.write_all(r#"
     </mbp:frameset>
 </body>
@@ -183,7 +191,7 @@ fn end_kindle_content_file(f: &mut fs::File) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn create_kindle_opf_file(dict: &Dictionary, output_path: &str, files: &Vec<(String, String)>) -> Result<(), Box<dyn Error>> {
+fn create_kindle_opf_file(dict: &Dictionary, output_path: &str, files: &Vec<(String, String)>) -> Result<()> {
     let opf_file_path = format!("{}/content.opf", output_path);
     let mut f = fs::File::create(opf_file_path)?;
 

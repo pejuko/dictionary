@@ -3,7 +3,8 @@ mod reader;
 mod writer;
 
 use std::collections::{HashMap, HashSet};
-use std::error::Error;
+
+use crate::error::{Error, Result};
 
 use reader::{gnu_fdl, pronunciation, wiki};
 use writer::kindle;
@@ -70,7 +71,7 @@ impl Dictionary {
         }
     }
 
-    pub fn build(cfg: &CliConfig) -> Result<Dictionary, Box<dyn Error>> {
+    pub fn build(cfg: &CliConfig) -> Result<Dictionary> {
         let mut dict = Dictionary::new(
             cfg.source_language.as_str(),
             cfg.target_language.as_str(),
@@ -81,7 +82,12 @@ impl Dictionary {
         if let Some(path) = &cfg.input_file_path {
             match format!("{}-{}", dict.source_language, dict.target_language).as_str() {
                 "en-cs" => gnu_fdl::read_czech(&mut dict, path)?,
-                lng => Err(format!("Unsupported language combination: {}", lng))?,
+                _ => {
+                    return Err(Error::UnsupportedLanguagePair {
+                        source_lang: dict.source_language.clone(),
+                        target_lang: dict.target_language.clone(),
+                    });
+                }
             }
         }
 
@@ -89,12 +95,10 @@ impl Dictionary {
             pronunciation::read_pronunciation(&mut dict, name, file_name)?;
         }
 
-        if let Some(wiki_file_path) = &cfg.wiki_file_path {
-            if let Some(wiki_prefix) = &cfg.wiki_prefix {
-                wiki::read_wiki(&mut dict, wiki_file_path, wiki_prefix)?;
-            } else {
-                Err(String::from("No wiki prefix specified."))?;
-            }
+        if let (Some(wiki_file_path), Some(wiki_prefix)) = (&cfg.wiki_file_path, &cfg.wiki_prefix) {
+            wiki::read_wiki(&mut dict, wiki_file_path, wiki_prefix)?;
+        } else if cfg.wiki_file_path.is_some() {
+            return Err(Error::MissingWikiPrefix);
         }
 
         Ok(dict)
@@ -198,7 +202,7 @@ impl Dictionary {
     }
     */
 
-    pub fn to_kindle(&self, output_path: &str, force: bool) -> Result<(), Box<dyn Error>> {
+    pub fn to_kindle(&self, output_path: &str, force: bool) -> Result<()> {
         kindle::to_kindle(self, output_path, force)
     }
 

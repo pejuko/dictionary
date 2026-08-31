@@ -9,6 +9,7 @@ indicatif = "0.18"
 quick-xml = "0.38.2"
 reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "rustls", "http2"] }
 regex = "1.11.1"
+thiserror = "2"
 
 [profile.release]
 opt-level = 3

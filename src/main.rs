@@ -1,22 +1,31 @@
 mod cli_config;
 mod dictionary;
 mod download;
+mod error;
 
-use std::{env, process};
-use std::error::Error;
+use std::env;
 
 use cli_config::CliConfig;
 use dictionary::Dictionary;
+use error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let config = CliConfig::build(env::args()).unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {err}");
-        process::exit(1);
-    });
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("{err}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> error::Result<()> {
+    let config = CliConfig::build(env::args())
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            std::process::exit(1);
+        });
 
     if config.print_help {
         CliConfig::print_help();
-        process::exit(0);
+        std::process::exit(0);
     }
 
     if config.default_mode {
@@ -28,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{:#?}", &config);
 
     if config.query.is_none() && config.output_path.is_none() {
-        Err("No search (-s) or output path (-o) is specified.")?;
+        return Err(Error::MissingQueryOrOutput);
     }
 
     let dict = Dictionary::build(&config)?;
@@ -51,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Records in reversed dictionary: {}", reversed_dict.len());
             reversed_dict.to_kindle(reverse_output_path, config.force)?;
         } else {
-            Err("No reverse title (-rt) is specified.")?;
+            return Err(Error::MissingReverseTitle);
         }
     }
 

@@ -173,6 +173,7 @@ dependencies = [
  "quick-xml",
  "regex",
  "reqwest",
+ "thiserror",
 ]
 
 [[package]]

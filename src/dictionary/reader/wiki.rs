@@ -1,13 +1,11 @@
 extern crate bzip2;
 
-use regex::Regex;
-
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
-
-use std::error::Error;
+use regex::Regex;
 
 use crate::dictionary::{Dictionary, Meaning, WordClass};
+use crate::error::{Error, Result};
 
 #[derive(Debug)]
 struct Page {
@@ -37,72 +35,81 @@ struct Re {
 }
 
 impl Re {
-    fn new(lang_prefix: &str) -> Re {
+    fn new(lang_prefix: &str) -> Result<Re> {
+        let data = Regex::new(r"\{\{(.*?)}}")
+            .map_err(|source| Error::InvalidPattern { pattern: r"\{\{(.*?)}}".to_string(), source })?;
+        let translations_title = Regex::new(r"^([^/]+)/translations$")
+            .map_err(|source| Error::InvalidPattern { pattern: r"^([^/]+)/translations$".to_string(), source })?;
+        let language = Regex::new(r"^==([^=]+)==$")
+            .map_err(|source| Error::InvalidPattern { pattern: r"^==([^=]+)==$".to_string(), source })?;
+        let translation_name = Regex::new(r"^\* ([^:]+):")
+            .map_err(|source| Error::InvalidPattern { pattern: r"^\* ([^:]+):".to_string(), source })?;
         let prefix = format!("^\\*.?\\s{}:", lang_prefix);
-        let name = String::from("^\\* ([^:]+):");
-        Re {
-            data: Regex::new(r"\{\{(.*?)}}").unwrap(),
-            translations_title: Regex::new(r"^([^/]+)/translations$").unwrap(),
-            language: Regex::new(r"^==([^=]+)==$").unwrap(),
-            translation_name: Regex::new(&name).unwrap(),
-            prefix: Regex::new(&prefix).unwrap(),
-        }
+        let prefix = Regex::new(&prefix)
+            .map_err(|source| Error::InvalidPattern { pattern: prefix.clone(), source })?;
+
+        Ok(Re {
+            data,
+            translations_title,
+            language,
+            translation_name,
+            prefix,
+        })
     }
 }
 
-pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), Box<dyn Error>> {
-    let file = std::fs::File::open(path).unwrap();
+pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<()> {
+    let file = std::fs::File::open(path)?;
     let file = std::io::BufReader::new(file);
     let file = bzip2::bufread::MultiBzDecoder::new(file);
     let file = std::io::BufReader::new(file);
     let mut reader = Reader::from_reader(file);
 
-    // let mut count = 0;
-    // let mut txt = Vec::new();
     let mut buf = Vec::new();
     let mut page = Page::empty();
     let mut state = State::None;
-    let re = Re::new(prefix);
+    let re = Re::new(prefix)?;
 
     loop {
-        match reader.read_event_into(&mut buf) {
-            Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+        let event = reader.read_event_into(&mut buf)
+            .map_err(|e| Error::Xml { position: reader.error_position(), source: e })?;
 
-            Ok(Event::Eof) => break,
+        match event {
+            Event::Eof => break,
 
-            Ok(Event::Start(e)) => {
+            Event::Start(e) => {
                 match e.name().as_ref() {
                     b"page" => {
                         state = State::Page;
                         page = Page::empty();
-                    },
+                    }
 
                     b"title" => {
                         state = State::Title;
                         page.title = "".to_string();
-                    },
+                    }
 
                     b"text" => {
                         state = State::Content;
                         page.content = "".to_string()
-                    },
+                    }
 
                     _ => (),
                 }
-            },
+            }
 
-            Ok(Event::End(e)) => {
+            Event::End(e) => {
                 match e.name().as_ref() {
                     b"page" => {
                         state = State::None;
                         if !page.title.contains(":") {
-                            read_wiki_page(dict, &page, &re);
+                            read_wiki_page(dict, &page, &re)?;
                         }
-                    },
+                    }
 
                     b"title" => {
                         state = State::Page;
-                    },
+                    }
 
                     b"text" => {
                         state = State::Page;
@@ -112,20 +119,22 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
                 }
             }
 
-            Ok(Event::Text(e)) => {
-                let str = e.decode().unwrap().into_owned();
+            Event::Text(e) => {
+                let text = e.decode()
+                    .map(|t| t.into_owned())
+                    .map_err(Error::TextDecode)?;
                 match state {
                     State::Title => {
-                        page.title.push_str(&str);
-                    },
+                        page.title.push_str(&text);
+                    }
 
                     State::Content => {
-                        page.content.push_str(&str);
+                        page.content.push_str(&text);
                     }
 
                     _ => ()
                 }
-            },
+            }
 
             // There are several other `Event`s we do not consider here
             _ => (),
@@ -137,10 +146,12 @@ pub fn read_wiki(dict: &mut Dictionary, path: &str, prefix: &str) -> Result<(), 
     Ok(())
 }
 
-fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
-    let mut headword = page.title.trim();
+fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) -> Result<()> {
+    let mut headword: &str = page.title.trim();
     if let Some(captures) = re.translations_title.captures(headword) {
-        headword = captures.get(1).unwrap().as_str();
+        if let Some(captured) = captures.get(1) {
+            headword = captured.as_str();
+        }
     }
 
     let mut current_word_class = WordClass::Unknown;
@@ -150,20 +161,29 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
 
     for line in page.content.lines() {
         if let Some(captures) = re.language.captures(line) {
-            current_language = captures.get(1).unwrap().as_str().to_lowercase();
+            if let Some(captured) = captures.get(1) {
+                current_language = captured.as_str().to_lowercase();
+            }
         }
 
         if !current_language.is_empty() && current_language != "english" {
             break;
         }
-        
+
         if let Some(captures) = re.translation_name.captures(line) {
-            current_translation_name = captures.get(1).unwrap().as_str().to_lowercase();
+            if let Some(captured) = captures.get(1) {
+                current_translation_name = captured.as_str().to_lowercase();
+            }
         }
 
         for data in re.data.find_iter(line) {
-            let Some(captures) = re.data.captures(data.as_str()) else { todo!() };
-            let parts = captures.get(1).unwrap().as_str().split("|").collect::<Vec<&str>>();
+            let Some(captures) = re.data.captures(data.as_str()) else {
+                continue;
+            };
+            let Some(first) = captures.get(1) else {
+                continue;
+            };
+            let parts = first.as_str().split("|").collect::<Vec<&str>>();
             let control = parts[0].trim();
             match control {
                 "IPA" => {
@@ -182,7 +202,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
                         }
                         dict.add_pronunciation(headword, "wiki", pronunciation);
                     }
-                },
+                }
 
                 "trans-top" => {
                     if !current_meaning.is_empty() {
@@ -199,7 +219,7 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
                     } else {
                         current_meaning = Meaning::new("");
                     }
-                },
+                }
 
                 "trans-bottom" => {
                     if !current_meaning.is_empty() {
@@ -231,4 +251,6 @@ fn read_wiki_page(dict: &mut Dictionary, page: &Page, re: &Re) {
     if !current_meaning.is_empty() {
         dict.add_meaning(headword, &current_word_class, &current_meaning);
     }
+
+    Ok(())
 }

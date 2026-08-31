@@ -1,8 +1,7 @@
-use std::error::Error;
-
 use crate::dictionary::{Dictionary, Meaning, WordClass};
+use crate::error::Result;
 
-pub fn read_czech(dict: &mut Dictionary, path: &str) -> Result<(), Box<dyn Error>> {
+pub fn read_czech(dict: &mut Dictionary, path: &str) -> Result<()> {
     let lines = super::read_tab_file(path)?;
 
     for line in lines {

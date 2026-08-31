@@ -2,12 +2,13 @@ pub mod gnu_fdl;
 pub mod pronunciation;
 pub mod wiki;
 
-use std::error::Error;
 use std::fs;
+
+use crate::error::Result;
 
 type LineType = Vec<String>;
 
-pub fn read_tab_file(path: &str) -> Result<Vec<LineType>, Box<dyn Error>> {
+pub fn read_tab_file(path: &str) -> Result<Vec<LineType>> {
     let contents = fs::read_to_string(path)?;
     let lines = contents
         .lines()
